@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sind Sie ein Mensch? - Das Grittibänz CAPTCHA</title>
+    <link rel="stylesheet" href="css/grittibaenz-captcha.css">
+    <style></style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Wählen Sie alle Bilder mit einem</h2>
+        <p class="sought">Grittibänz</p>
+        <p>Wenn keiner zu sehen ist, klicken Sie nur auf &laquo;weiter&raquo;</p>
+      </div>
+      <div class="grid" id="captchaGrid">
+        <!-- Grid items will be added by JavaScript -->
+      </div>
+      <div class="footer">
+        <div class="controls">
+          <div class="control-button" id="cb1">
+            <img src="images/cb1.webp" alt="Control 1">
+          </div>
+          <div class="control-button" id="cb2">
+            <img src="images/cb2.webp" alt="Control 2">
+          </div>
+          <div class="control-button" id="cb3">
+            <img src="images/cb3.webp" alt="Control 3">
+          </div>
+        </div>
+        <button class="skip-button" id="skipButton">WEITER</button>
+      </div>
+      <div id="result"></div>
+    </div>
+    <script src="js/grittibaenz-captcha.js"></script>
+  </body>
+</html>
