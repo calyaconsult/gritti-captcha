@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sind Sie ein Mensch?</title>
+<style>
+  .container {
+    max-width: 400px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+  }
+
+  .header {
+    background-color: #4285f4;
+    color: white;
+    padding: 20px;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .header p {
+    margin: 5px 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background-color: #ccc;
+    padding: 2px;
+  }
+
+  .grid-item {
+    aspect-ratio: 1;
+    background-color: #f5f5f5;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .grid-item.selected::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(66, 133, 244, 0.3);
+    border: 2px solid #4285f4;
+    pointer-events: none;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: #f5f5f5;
+    border-radius: 0 0 4px 4px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+  }
+
+  .control-button {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .control-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .skip-button {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .skip-button:hover {
+    background-color: #3b78e7;
+  }
+  .sought {
+    font-size: 150% !important;
+  }
+  result {
+    font-size: 200%;
+  }
+  .red {
+    color: red;
+  }
+  .green {
+    color: green;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Wählen Sie alle Bilder mit einem</h2>
+      <p class="sought">Grittibänz</p>
+      <p>Wenn keiner zu sehen ist, klicken Sie nur auf &laquo;weiter&raquo;</p>
+    </div>
+
+    <div class="grid" id="captchaGrid">
+      <!-- Grid items will be added by JavaScript -->
+    </div>
+
+    <div class="footer">
+      <div class="controls">
+        <div class="control-button" id="cb1">
+          <img src="images/cb1.webp" alt="Control 1">
+        </div>
+        <div class="control-button" id="cb2">
+          <img src="images/cb2.webp" alt="Control 2">
+        </div>
+        <div class="control-button" id="cb3">
+          <img src="images/cb3.webp" alt="Control 3">
+        </div>
+      </div>
+      <button class="skip-button" id="skipButton">WEITER</button>
+    </div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+  const selectedSquares = new Set();
+    function createShuffler() {
+        // Initialize the array with decimal strings '00' to '15'
+        let array = Array.from({ length: 16 }, (_, i) => i.toString().padStart(2, '0')); // ['00', '01', ..., '15']
+
+        function shuffleAndPick() {
+            // Shuffle the array using the Fisher-Yates algorithm
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+
+            // Remove and return the first element
+            return array.shift();
+        }
+
+        return shuffleAndPick;
+    }
+
+    let shuffler = createShuffler();
+
+    function getImgName(i) {
+      //var iStr = (i>9)? `${i}` : `0${i}`;
+      iStr = i;
+      return `images/gb${iStr}.webp`;
+    }
+
+    class CaptchaGrid { // Refactored from the code in grittibaenz-captcha-2.1.html by https://chatgpt.com/c/6740246d-106c-800d-b5d0-073bba004efd
+      constructor() {
+        this.grid = document.getElementById('captchaGrid');
+        this.skipButton = document.getElementById('skipButton');
+        this.cb1 = document.getElementById('cb1');
+        this.cb2 = document.getElementById('cb2');
+        this.cb3 = document.getElementById('cb3');
+        this.selectedSquares = new Map();
+
+        if (!this.grid || !this.skipButton) {
+          throw new Error('Required elements #captchaGrid or #skipButton are missing from the DOM.');
+        }
+
+        this.init();
+        this.addEventListeners();
+      }
+
+      init() {
+        // Create 16 grid items
+        for (let i = 0; i < 16; i++) {
+          const gridItem = document.createElement('div');
+          gridItem.className = 'grid-item';
+          gridItem.dataset.index = i;
+
+          const img = document.createElement('img');
+          img.src = getImgName(shuffler());
+          img.alt = `Grid item ${i + 1}`;
+
+          gridItem.appendChild(img);
+          this.grid.appendChild(gridItem);
+        }
+      }
+
+      addEventListeners() {
+        // Handle grid item clicks
+        this.grid.addEventListener('click', (e) => {
+          const gridItem = e.target.closest('.grid-item');
+          if (!gridItem) {
+            console.warn('Click occurred outside a grid item.');
+            return;
+          }
+          const imgElement = gridItem.querySelector('img');
+          const imageUrl = new URL(imgElement.src).pathname.split('/').pop().replace('.webp','');
+          const index = Number(gridItem.dataset.index);
+
+          if (this.selectedSquares.has(index)) {
+            this.selectedSquares.delete(index);
+            gridItem.classList.remove('selected');
+          } else {
+            this.selectedSquares.set(index, imageUrl);
+            gridItem.classList.add('selected');
+          }
+
+          console.log('Selected squares:', Object.fromEntries(this.selectedSquares));
+        });
+
+        // Handle skip button
+        this.skipButton.addEventListener('click', () => {
+          let result = Array.from(this.selectedSquares.entries());
+          result = result.reduce((acc, current) => [...acc,current[1]], []).sort().join('')
+          console.log('Selected squares:', result);
+          const resultDiv = document.getElementById('result');
+          if (result === 'gb01gb02gb06gb07') {
+            resultDiv.classList.add('green');
+            resultDiv.innerHTML = '<p>Ja, so sehen wir das auch!</p><p><a href="/">Hier geht es zur nächsten Seite</a></p>';
+          } else {
+            resultDiv.classList.add('red');
+            resultDiv.textContent = 'Wir scheinen in Sachen Grittibänz verschiedene Vorstellungen zu haben.';
+          }
+
+          this.selectedSquares.clear();
+          this.grid.querySelectorAll('.grid-item').forEach((item) => {
+            item.classList.remove('selected');
+          });
+        });
+
+        // Handle cb1 button click: clear and re-render the CAPTCHA
+        this.cb1.addEventListener('click', () => {
+          console.log('Clearing and re-rendering CAPTCHA');
+          this.selectedSquares.clear(); // Clear selected squares
+          document.getElementById('captchaGrid').innerHTML = '';
+          document.getElementById('result').innerHTML = '';
+          document.getElementById('result').textContent = '';
+          document.getElementById('result').classList.remove('green');
+          document.getElementById('result').classList.remove('red');
+          shuffler = createShuffler();
+          this.init(); // Re-render the grid
+        });
+        // Handle cb1 button click: clear and re-render the CAPTCHA
+        this.cb2.addEventListener('click', () => {
+          alert('Die Audio-Funktion steht leider noch nicht zur Verfügung.');
+        });
+        // Handle cb1 button click: clear and re-render the CAPTCHA
+        this.cb3.addEventListener('click', () => {
+          alert('Dieses CAPTCHA prüft nicht wirklich, ob Sie ein Mensch sind. Es übermittelt auch keine Daten an irgendwen. Es dient nur zum Spass.');
+        });
+      }
+    }
+    // Initialize the CAPTCHA grid
+    const captcha = new CaptchaGrid();
+
+  </script>
+</body>
+</html>
